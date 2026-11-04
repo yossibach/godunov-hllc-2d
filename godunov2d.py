@@ -474,7 +474,7 @@ def Godunov2(gamma,L,N,c,t_end):
         
         
         if step/3 == step//3:
-            # update memory - only every 10 steps!
+            # update memory - only every 3 steps!
             us.append(u.copy())
             ps.append(p.copy())
             rhos.append(rho.copy())

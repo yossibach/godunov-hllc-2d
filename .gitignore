@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Editors / OS
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Large simulation outputs (keep only selected figures in figures/)
+*.npy
+*.npz
+*.h5
+*.mp4
+*.gif
+output/

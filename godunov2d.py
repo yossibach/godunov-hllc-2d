@@ -199,6 +199,17 @@ def BCrigid(rho,p,u,v):   # veritcal rigid boundary conditions
 
     return(rho,p,u,v)
 
+def BCrigid_slopes(drho,dp,du,dv):   # normal-direction slopes at rigid walls:
+    drho[:, 0] = -drho[:, 1]          # rho, p, u are even about the wall -> slopes odd
+    drho[:,-1] = -drho[:,-2]
+    dp[:, 0]   = -dp[:, 1]
+    dp[:,-1]   = -dp[:,-2]
+    du[:, 0]   = -du[:, 1]
+    du[:,-1]   = -du[:,-2]
+    dv[:, 0]   =  dv[:, 1]            # v is odd about the wall -> slope even
+    dv[:,-1]   =  dv[:,-2]
+    return(drho,dp,du,dv)
+
 def BCperiodic(rho,p,u,v):   # horizontal periodic boundary conditions
     rho[ 0,:]  = rho[-2,:]
     rho[-1,:]  = rho[ 1,:]
@@ -345,7 +356,10 @@ def Godunov2(gamma,L,N,c,t_end):
         dv_D[:,1:-1]   = (v[:,2:  ]  -v[:,1:-1])/dy
         dv_V  = (dv_U*dv_D>0).astype(int) * np.copysign(
             np.minimum(abs(dv_U),abs(dv_D)), dv_U)
-
+        
+        drho_H, dp_H, du_H, dv_H = BCperiodic(drho_H, dp_H, du_H, dv_H)
+        drho_V, dp_V, du_V, dv_V = BCrigid_slopes(drho_V, dp_V, du_V, dv_V)
+        
         # steps 4,5 - Solve Riemann problems for quantities on walls
         F      = np.zeros((M-1,N  , 4))
         for k in range(M-1):
@@ -430,6 +444,9 @@ def Godunov2(gamma,L,N,c,t_end):
         dv_D[:,1:-1]   = (v[:,2:  ]  -v[:,1:-1])/dy
         dv_V  = (dv_U*dv_D>0).astype(int) * np.copysign(
             np.minimum(abs(dv_U),abs(dv_D)), dv_U)
+        
+        drho_H, dp_H, du_H, dv_H = BCperiodic(drho_H, dp_H, du_H, dv_H)
+        drho_V, dp_V, du_V, dv_V = BCrigid_slopes(drho_V, dp_V, du_V, dv_V)
              
         # steps 11,12 - Solve Riemann problems for quantities on walls
         F      = np.zeros((M-1,N  , 4))

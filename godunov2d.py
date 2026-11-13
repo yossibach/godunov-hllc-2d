@@ -256,6 +256,8 @@ def Godunov2(gamma,L,N,c,t_end):
     rhos.append(rho.copy())
     ts.append(now)
     
+    cons = [U[1:-1,1:-1][:,:,[0,3]].sum(axis=(0,1))]  #conservation test
+    
     # stupid stuff initializing
     drho_L = np.zeros((M,N))
     drho_R = np.zeros((M,N))
@@ -479,12 +481,14 @@ def Godunov2(gamma,L,N,c,t_end):
             ps.append(p.copy())
             rhos.append(rho.copy())
             ts.append(now)
+            
+            cons.append(U[1:-1,1:-1][:,:,[0,3]].sum(axis=(0,1)))
              
             
     print(len(ts))
     rho,p,u,v  = BCrigid(rho,p,u,v)
     
-    return( x, y, ts, us, vs, ps, rhos)
+    return( x, y, ts, us, vs, ps, rhos, np.array(cons))
 
 def plotgodunov( x, y, ts, us, vs, ps, rhos):    
     X, Y = np.meshgrid(x,y)
@@ -513,13 +517,20 @@ def plotgodunov( x, y, ts, us, vs, ps, rhos):
     plt.show()
 # plotgodunov( x, y, ts, us, vs, ps, rhos)
 
+def plot_conservation(ts, cons):
+    rel = np.abs(cons/cons[0] - 1)
+    fig, ax = plt.subplots()
+    ax.semilogy(ts[1:], rel[1:,0], label='mass')
+    ax.semilogy(ts[1:], rel[1:,1], label='energy')
+    ax.set_xlabel('t'); ax.set_ylabel('|Q(t)/Q(0) - 1|'); ax.legend()
     
 
 # def Godunov2(gamma,L,N,c,t_end):
 # x, y, ts, us, vs, ps, rhos = Godunov2(1.4,2,101,0.3,3)
-x, y, ts, us, vs, ps, rhos = Godunov2(5/3,1,50,0.3,2)
+x, y, ts, us, vs, ps, rhos, cons = Godunov2(5/3,1,50,0.3,2)
 winsound.Beep(880, 200)
 winsound.Beep(440, 500)
+plot_conservation(ts,cons)
 plotgodunov( x, y, ts, us, vs, ps, rhos)
 
 # x, y, ts, us, vs, ps, rhos = Godunov2(5/3,1,100,0.02,2)

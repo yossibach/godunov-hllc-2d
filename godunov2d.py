@@ -180,8 +180,9 @@ def IC(L,W,N,M):  # KH Springel 2010
     X = np.arange(0, L, dx)
     Y = np.arange(0, W, dy)
     X, Y = np.meshgrid(X, Y)
-    rho = (abs(X-0.5)<0.25).astype(int)*rho_i + (abs(X-0.5)>0.25).astype(int)*rho_o
-    u   = (abs(X-0.5)<0.25).astype(int)*u_i   + (abs(X-0.5)>0.25).astype(int)*u_o
+    inner = abs(X-0.5) < 0.25            # the dense central band
+    rho   = np.where(inner, rho_i, rho_o)
+    u     = np.where(inner, u_i,   u_o)
     v   = w0*sin(4*pi*Y)*( exp(-(X-0.25)**2/twosig2) + exp(-(X-0.75)**2/twosig2) )
     p   = 2.5*np.ones((M,N))
     

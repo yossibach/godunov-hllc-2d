@@ -391,7 +391,6 @@ def Godunov2(gamma,L,N,c,t_end):
         Up1[1:-1,1:-1,:] = U[1:-1,1:-1,:]                   \
                 + dt*dy*( F[ :-1,1:-1,:] - F[1:  ,1:-1,:] )  \
                 + dt*dx*( G[1:-1, :-1,:] - G[1:-1,1:  ,:] )
-        U = Up1.copy()
 
         # step 8 - update primitive variables
         rho = Up1[:,:,0]      /dx/dy
@@ -479,14 +478,14 @@ def Godunov2(gamma,L,N,c,t_end):
                 + dt*dy*( F[ :-1,1:-1,:] - F[1:  ,1:-1,:] )  \
                 + dt*dx*( G[1:-1, :-1,:] - G[1:-1,1:  ,:] )
                 
-        # step 15 - average both progressions
+        # step 15 - two-stage RK2 (Toro eq. 15.36): U^{n+1} = (U^n + U~^{n+2})/2
         U   = 0.5*( U + Up2 )
         
         #step 16 - update primitive variables
         rho = U[:,:,0]      /dx/dy
         u   = U[:,:,1] /rho /dx/dy
         v   = U[:,:,2] /rho /dx/dy
-        p   = (gamma-1)*( Up1[:,:,3]/dx/dy - 0.5*rho*(u**2+v**2)) 
+        p   = (gamma-1)*( U[:,:,3]/dx/dy - 0.5*rho*(u**2+v**2)) 
         
        # step 2 - boundary conditions (moved here to avoid problems calculating dt)
         rho,p,u,v      = BCrigid(rho,p,u,v)

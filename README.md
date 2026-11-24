@@ -27,7 +27,7 @@ Selected with the `IC` argument of `Godunov2`:
 
 ## Verification
 
-Two checks, each of which caught a real bug during development:
+Three checks. The first two each caught a real bug during development:
 
 - **Conservation.** In a closed box (periodic + reflecting walls) total mass and energy must be conserved to round-off. They are, to ~10⁻¹⁶ relative. Before the ghost-cell slopes were given proper boundary conditions, the drift reached ~3×10⁻⁴ by t = 2.
 
@@ -35,12 +35,15 @@ Two checks, each of which caught a real bug during development:
 
 - **Advection** (`test_advection.py`). A density wave advected at uniform velocity u₀ must move exactly u₀·t. Measured/expected displacement: **1.001**. This test exposed an error in the Runge–Kutta stage combination that had made the solution advance 1.5× faster than the reported time.
 
+- **All initial conditions** (`test_initial_conditions.py`). Every IC is run briefly on a square and on a rectangular domain; the test checks for NaNs, conservation to round-off, and (for the explosion) mirror symmetry to round-off.
+
 ## Usage
 
 ```bash
 pip install numpy matplotlib
 python godunov2d.py          # KH run: density snapshots and conservation plot
 python test_advection.py     # time-integration check, prints the displacement ratio
+python test_initial_conditions.py   # smoke test of all ICs, prints PASS/FAIL
 ```
 
 Run parameters are set in the call to `Godunov2(gamma, L, W, M, N, c, t_end, IC=...)` at the bottom of `godunov2d.py`: adiabatic index, box size L × W, number of cells M × N, CFL number, end time and initial condition. A 50×50 run to t = 2 takes a few minutes, since the flux loops are plain Python.

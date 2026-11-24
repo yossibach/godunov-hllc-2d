@@ -37,8 +37,8 @@ def wave_phase(rho, dx, P):
 
 
 if __name__ == "__main__":
-    godunov2d.IC = IC_advection      # swap in the advection initial condition
-    x, y, ts, us, vs, ps, rhos, cons = godunov2d.Godunov2(1.4, L, N, 0.3, T_END)
+    x, y, ts, us, vs, ps, rhos, cons = godunov2d.Godunov2(1.4, L, N, 0.3, T_END,
+                                                          IC=IC_advection)
 
     dx = L/N
     P = (N-2)*dx

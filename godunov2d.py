@@ -1,19 +1,10 @@
 #################################
-# %matplotlib auto
 import numpy as np
 from numpy import sqrt, sin, cos, pi, exp, log
 import matplotlib.pyplot as plt
 import sys
-from matplotlib import cm
-from matplotlib.ticker import LinearLocator
-from matplotlib.animation import FuncAnimation
-import winsound
 
 def hllc(rho_L,rho_R,p_L,p_R,u_L,u_R,v_L,v_R,gamma):
-    # if rho_L<=0 or rho_R<=0:
-    #     print ('In hllc, bad rho_k=',rho_L,rho_R)
-    # if p_L<=0 or p_R<=0:
-    #     print ('In hllc, bad p_k=',p_L,p_R)
     # Toro chapter 10.6.1
     # step 1
     a_L = sqrt(gamma*p_L/rho_L)
@@ -73,21 +64,18 @@ def hllc(rho_L,rho_R,p_L,p_R,u_L,u_R,v_L,v_R,gamma):
         F2_hllc = F2_L
         F3_hllc = F3_L
         F4_hllc = F4_L
-        # print('deb a')
     
     if (S_L<=0 and 0<=Sstar):
         F1_hllc = F1_L + S_L*( U1star_L - rho_L     )   # U1=rho
         F2_hllc = F2_L + S_L*( U2star_L - rho_L*u_L )  # U2 = rho*u
         F3_hllc = F3_L + S_L*( U3star_L - rho_L*v_L )  # U3 = rho*v
         F4_hllc = F4_L + S_L*( U4star_L - E_L       )  # U4 = E
-        # print('deb b')
         
     if (Sstar<=0 and 0<=S_R):
         F1_hllc = F1_R + S_R*( U1star_R - rho_R     )   # U1=rho
         F2_hllc = F2_R + S_R*( U2star_R - rho_R*u_R )  # U2 = rho*u
         F3_hllc = F3_R + S_R*( U3star_R - rho_R*v_R )  # U2 = rho*u
         F4_hllc = F4_R + S_R*( U4star_R - E_R       )  # U3 = E
-        # print('deb c')
         
     if 0>=S_R:
         F1_hllc = F1_R
@@ -97,71 +85,11 @@ def hllc(rho_L,rho_R,p_L,p_R,u_L,u_R,v_L,v_R,gamma):
         # print('deb d')
         
     Fhllc = np.array([F1_hllc,F2_hllc,F3_hllc,F4_hllc])
-    return Fhllc   #pstar, Sstar #
+    return Fhllc
 
 ###############################################################
 
-# def IC(rho_L,rho_R,p_L,p_R,u_L,u_R,v_L,v_R,gamma,L,W,N,M):  ! 2D SOD-like explosion
-#     dx    = L/N
-#     dy    = W/M
-#     x     = np.arange(M)*dx
-#     y     = np.arange(N)*dy
-#     rho   = np.ones((M,N))
-#     p     = np.ones((M,N))
-#     u     = np.ones((M,N))
-#     v     = np.ones((M,N))
-
-#     X = np.arange(-1, L-1, dx)
-#     Y = np.arange(-1, W-1, dy)
-#     X, Y = np.meshgrid(X, Y)
-#     R = np.sqrt(X**2 + Y**2)
-#     print(R.shape,rho.shape)
-#     rho = (R<0.4).astype(int)*rho_L + (R>=0.4).astype(int)*rho_R
-#     p   = (R<0.4).astype(int)*p_L + (R>=0.4).astype(int)*p_R
-#     u   = (R<0.4).astype(int)*u_L + (R>=0.4).astype(int)*u_R
-#     v   = (R<0.4).astype(int)*v_L + (R>=0.4).astype(int)*v_R
-    
-#     # rho[:,:N//2+1] = rho_L
-#     # rho[:,N//2+1:] = rho_R
-#     # p[:,:N//2+1] = p_L
-#     # p[:,N//2+1:] = p_R
-#     # u[:,:N//2+1] = u_L
-#     # u[:,N//2+1:] = u_R
-#     # v[:,:N//2+1] = v_L
-#     # v[:,N//2+1:] = v_R
-    
-#     return(x,y,dx,dy,rho,p,u,v)
-
-# def IC(rho_L,rho_R,p_L,p_R,u_L,u_R,v_L,v_R,gamma,L,W,N,M):  # KH instabillity
-#     dx    = L/N
-#     dy    = W/M
-#     x     = np.arange(M)*dx
-#     y     = np.arange(N)*dy
-#     rho   = np.ones((M,N))
-#     p     = np.ones((M,N))
-#     u     = np.ones((M,N))
-#     v     = np.ones((M,N))
-
-#     X = np.arange(-1, L-1, dx)
-#     Y = np.arange(-1, W-1, dy)
-#     X, Y = np.meshgrid(X, Y)
-#     rho = (X>0.08*sin(3*Y/2/pi)).astype(int)*rho_L + (X<0.08*sin(3*Y/2/pi)).astype(int)*rho_R
-#     p   = (X>0.08*sin(3*Y/2/pi)).astype(int)*p_L + (X<0.08*sin(3*Y/2/pi)).astype(int)*p_R
-#     u   = (X>0.08*sin(3*Y/2/pi)).astype(int)*u_L + (X<0.08*sin(3*Y/2/pi)).astype(int)*u_R
-#     v   = (X>0.08*sin(3*Y/2/pi)).astype(int)*v_L + (X<0.08*sin(3*Y/2/pi)).astype(int)*v_R
-    
-#     # rho[:,:N//2+1] = rho_L
-#     # rho[:,N//2+1:] = rho_R
-#     # p[:,:N//2+1] = p_L
-#     # p[:,N//2+1:] = p_R
-#     # u[:,:N//2+1] = u_L
-#     # u[:,N//2+1:] = u_R
-#     # v[:,:N//2+1] = v_L
-#     # v[:,N//2+1:] = v_R
-    
-#     return(x,y,dx,dy,rho,p,u,v)
-
-def IC(L,W,N,M):  # KH Springel 2010
+def IC_kh_springel(L,W,N,M):  # KH Springel 2010
     rho_i,u_i  = 2, 0.5 # 10, 0.5 # 
     rho_o,u_o  = 1,-0.5
     p          = 2.5
@@ -188,7 +116,46 @@ def IC(L,W,N,M):  # KH Springel 2010
     
     return(x,y,dx,dy,rho,p,u,v)
 
-def BCrigid(rho,p,u,v):   # veritcal rigid boundary conditions
+def IC_sod_explosion(L, W, N, M):
+    """Circular 2D Sod-like explosion: a high-pressure disk in the centre (use gamma=1.4)."""
+    rho_in,  p_in  = 1.0,   1.0
+    rho_out, p_out = 0.125, 0.1
+    r0 = 0.2*L                               # disk radius
+
+    dx = L/N
+    dy = W/M
+    x  = np.arange(M)*dx
+    y  = np.arange(N)*dy
+
+    X, Y   = np.meshgrid(np.arange(N)*dx, np.arange(M)*dy)
+    inside = np.hypot(X - L/2, Y - W/2) < r0
+    rho = np.where(inside, rho_in, rho_out)
+    p   = np.where(inside, p_in,   p_out)
+    u   = np.zeros((M,N))
+    v   = np.zeros((M,N))
+    return(x,y,dx,dy,rho,p,u,v)
+
+def IC_kh_sharp(L, W, N, M):
+    """KH with a sharp, sinusoidally displaced interface between two streams."""
+    rho_1, u_1 = 1.0,  1.0                   # beyond the interface
+    rho_2, u_2 = 0.1, -1.0                   # before the interface
+    p0   = 1.0
+    A, k = 0.04*L, 1                         # displacement amplitude, number of wavelengths
+
+    dx = L/N
+    dy = W/M
+    x  = np.arange(M)*dx
+    y  = np.arange(N)*dy
+
+    X, Y  = np.meshgrid(np.arange(N)*dx, np.arange(M)*dy)
+    upper = (X - L/2) > A*np.sin(2*np.pi*k*Y/W)
+    rho = np.where(upper, rho_1, rho_2)
+    u   = np.where(upper, u_1,   u_2)
+    v   = np.zeros((M,N))
+    p   = p0*np.ones((M,N))
+    return(x,y,dx,dy,rho,p,u,v)
+
+def BCrigid(rho,p,u,v):   # vertical rigid boundary conditions
     rho[ :,0]  = rho[:, 1]
     rho[:,-1]  = rho[:,-2]
     p[:, 0]    =  p[:, 1]
@@ -225,18 +192,12 @@ def BCperiodic(rho,p,u,v):   # horizontal periodic boundary conditions
 
 ######################################################
 
-def Godunov2(gamma,L,N,c,t_end):
-    # global a,rho,p,U,Up1,Up2
+def Godunov2(gamma,L,N,c,t_end, IC=IC_kh_springel):
     step   = 0
     W      = L
     M      = N
     
-    # x,y,dx,dy,rho,p,u,v = IC(1,0.125,1,0.1,0,0,0,0,1.4,L,W,N,M) # SOD
-    # x,y,dx,dy,rho,p,u,v = IC(1,0.1,1,1,1,-1,0,0,1.4,L,W,N,M) # KH instabillity
-    x,y,dx,dy,rho,p,u,v = IC(L,W,N,M) # KH instabillity Springel 2010
-    # dx,dy,rho,p,u = IC(1,1,1,1,0,0,1.4,L,N)
-    # dx,dy,rho,p,u = IC(1,1,0.4,0.4,-2,2,1.4,L,N) # Test 2
-    # dx,dy,rho,p,u = IC(1,1,1000,0.01,0,0,1.4,L,N) # Test 3
+    x,y,dx,dy,rho,p,u,v = IC(L,W,N,M)
 
     rho,p,u,v       = BCrigid(rho,p,u,v)
     rho,p,u,v       = BCperiodic(rho,p,u,v)
@@ -246,12 +207,7 @@ def Godunov2(gamma,L,N,c,t_end):
     U[:,:,1] = rho*u*dx*dy
     U[:,:,2] = rho*v*dx*dy
     U[:,:,3] = rho*(0.5*(u**2+v**2) + p/(gamma-1)/rho)*dx*dy
-    
-    # for x5 in range(N):
-    #     for y5 in range(M):
-    #         if rho[x5,y5]==0 or np.isnan(rho[x5,y5])  or np.isinf(rho[x5,y5]):
-    #             print('bad rho!!!\n',rho[x5,y5])
-    
+
     # time
     now   = 0
 
@@ -270,7 +226,7 @@ def Godunov2(gamma,L,N,c,t_end):
     
     cons = [U[1:-1,1:-1][:,:,[0,3]].sum(axis=(0,1))]  #conservation test
     
-    # stupid stuff initializing
+    # allocate slope arrays
     drho_L = np.zeros((M,N))
     drho_R = np.zeros((M,N))
     drho_U = np.zeros((M,N))
@@ -292,19 +248,11 @@ def Godunov2(gamma,L,N,c,t_end):
     Up2    = np.ones((M,N,4))
 
     while (now<t_end):
-        # # step 2 - BC
-        # rho,p,u,v      = BCrigid(rho,p,u,v)
-        # rho,p,u,v      = BCperiodic(rho,p,u,v)
-        
         # step 1 - dt
         if (1==0): #(rho<0).any() or (rho==0).any():
             print("bad rho in step # ",step)
-            print(rho)
-            winsound.Beep(440, 500)
         if (p<0).any():
             print("bad p in step # ",step)
-            print(p)
-            # winsound.Beep(440, 500)
         a        = sqrt(gamma*p/rho)
         if(np.isnan(a).any()):
             print('Nan args in a:', np.argwhere(np.isnan(a)))
@@ -312,7 +260,7 @@ def Godunov2(gamma,L,N,c,t_end):
         dt       = min(c*(min(dx,dy)/(a+sqrt(u**2+v**2))).min(), t_end-now)
         now     += dt
         step    += 1
-        if step/1 == step//1:
+        if step%10 == 0:
             print('step ',step, ', time = ',now)
         
         # step 3 - calculate slopes using MinMod
@@ -492,7 +440,7 @@ def Godunov2(gamma,L,N,c,t_end):
         rho,p,u,v      = BCperiodic(rho,p,u,v)
         
         
-        if step/3 == step//3:
+        if step%3 == 0:
             # update memory - only every 3 steps!
             us.append(u.copy())
             ps.append(p.copy())
@@ -500,9 +448,8 @@ def Godunov2(gamma,L,N,c,t_end):
             ts.append(now)
             
             cons.append(U[1:-1,1:-1][:,:,[0,3]].sum(axis=(0,1)))
-             
-            
-    print(len(ts))
+
+
     rho,p,u,v  = BCrigid(rho,p,u,v)
     
     return( x, y, ts, us, vs, ps, rhos, np.array(cons))
@@ -522,17 +469,10 @@ def plotgodunov( x, y, ts, us, vs, ps, rhos):
                 indx+=l
             axs[m,n].pcolormesh(X[1:-1,1:-1],Y[1:-1,1:-1],np.transpose(rhos[indx][1:-1,1:-1]),shading='gouraud',cmap='turbo') #'RdYlBu_r')
             axs[m,n].set_xlabel('t='+str(round(ts[indx],4)))
-            # plt.suptitle('density plots')
-    
-    # fig2, ax2 = plt.subplots(figsize=(7,7))
-
-    # ax2.plot(x[1:-1],rhos[-1][1:-1,51])
-    # plt.show()
     
     fig3, ax3 = plt.subplots(figsize=(7,7))
     ax3.pcolormesh(X[1:-1,1:-1],Y[1:-1,1:-1],np.transpose(rhos[-1][1:-1,1:-1]),shading='gouraud',cmap='turbo')
     plt.show()
-# plotgodunov( x, y, ts, us, vs, ps, rhos)
 
 def plot_conservation(ts, cons):
     rel = np.abs(cons/cons[0] - 1)
@@ -543,17 +483,7 @@ def plot_conservation(ts, cons):
     
 
 if __name__ == "__main__":
-    # def Godunov2(gamma,L,N,c,t_end):
-    # x, y, ts, us, vs, ps, rhos = Godunov2(1.4,2,101,0.3,3)
     x, y, ts, us, vs, ps, rhos, cons = Godunov2(5/3,1,50,0.3,2)
-    winsound.Beep(880, 200)
-    winsound.Beep(440, 500)
     plot_conservation(ts,cons)
     plotgodunov( x, y, ts, us, vs, ps, rhos)
-
-# x, y, ts, us, vs, ps, rhos = Godunov2(5/3,1,100,0.02,2)
-# winsound.Beep(880, 200)
-# winsound.Beep(440, 500)
-# plotgodunov( x, y, ts, us, vs, ps, rhos)
-
 

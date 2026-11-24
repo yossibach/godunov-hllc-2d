@@ -100,67 +100,7 @@ def hllc(rho_L,rho_R,p_L,p_R,u_L,u_R,v_L,v_R,gamma):
 
 ###############################################################
 
-# def IC(rho_L,rho_R,p_L,p_R,u_L,u_R,v_L,v_R,gamma,L,W,N,M):  ! 2D SOD-like explosion
-#     dx    = L/N
-#     dy    = W/M
-#     x     = np.arange(M)*dx
-#     y     = np.arange(N)*dy
-#     rho   = np.ones((M,N))
-#     p     = np.ones((M,N))
-#     u     = np.ones((M,N))
-#     v     = np.ones((M,N))
-
-#     X = np.arange(-1, L-1, dx)
-#     Y = np.arange(-1, W-1, dy)
-#     X, Y = np.meshgrid(X, Y)
-#     R = np.sqrt(X**2 + Y**2)
-#     print(R.shape,rho.shape)
-#     rho = (R<0.4).astype(int)*rho_L + (R>=0.4).astype(int)*rho_R
-#     p   = (R<0.4).astype(int)*p_L + (R>=0.4).astype(int)*p_R
-#     u   = (R<0.4).astype(int)*u_L + (R>=0.4).astype(int)*u_R
-#     v   = (R<0.4).astype(int)*v_L + (R>=0.4).astype(int)*v_R
-    
-#     # rho[:,:N//2+1] = rho_L
-#     # rho[:,N//2+1:] = rho_R
-#     # p[:,:N//2+1] = p_L
-#     # p[:,N//2+1:] = p_R
-#     # u[:,:N//2+1] = u_L
-#     # u[:,N//2+1:] = u_R
-#     # v[:,:N//2+1] = v_L
-#     # v[:,N//2+1:] = v_R
-    
-#     return(x,y,dx,dy,rho,p,u,v)
-
-# def IC(rho_L,rho_R,p_L,p_R,u_L,u_R,v_L,v_R,gamma,L,W,N,M):  # KH instabillity
-#     dx    = L/N
-#     dy    = W/M
-#     x     = np.arange(M)*dx
-#     y     = np.arange(N)*dy
-#     rho   = np.ones((M,N))
-#     p     = np.ones((M,N))
-#     u     = np.ones((M,N))
-#     v     = np.ones((M,N))
-
-#     X = np.arange(-1, L-1, dx)
-#     Y = np.arange(-1, W-1, dy)
-#     X, Y = np.meshgrid(X, Y)
-#     rho = (X>0.08*sin(3*Y/2/pi)).astype(int)*rho_L + (X<0.08*sin(3*Y/2/pi)).astype(int)*rho_R
-#     p   = (X>0.08*sin(3*Y/2/pi)).astype(int)*p_L + (X<0.08*sin(3*Y/2/pi)).astype(int)*p_R
-#     u   = (X>0.08*sin(3*Y/2/pi)).astype(int)*u_L + (X<0.08*sin(3*Y/2/pi)).astype(int)*u_R
-#     v   = (X>0.08*sin(3*Y/2/pi)).astype(int)*v_L + (X<0.08*sin(3*Y/2/pi)).astype(int)*v_R
-    
-#     # rho[:,:N//2+1] = rho_L
-#     # rho[:,N//2+1:] = rho_R
-#     # p[:,:N//2+1] = p_L
-#     # p[:,N//2+1:] = p_R
-#     # u[:,:N//2+1] = u_L
-#     # u[:,N//2+1:] = u_R
-#     # v[:,:N//2+1] = v_L
-#     # v[:,N//2+1:] = v_R
-    
-#     return(x,y,dx,dy,rho,p,u,v)
-
-def IC(L,W,N,M):  # KH Springel 2010
+def IC_kh_springel(L,W,N,M):  # KH Springel 2010
     rho_i,u_i  = 2, 0.5 # 10, 0.5 # 
     rho_o,u_o  = 1,-0.5
     p          = 2.5
@@ -185,6 +125,45 @@ def IC(L,W,N,M):  # KH Springel 2010
     v   = w0*sin(4*pi*Y)*( exp(-(X-0.25)**2/twosig2) + exp(-(X-0.75)**2/twosig2) )
     p   = 2.5*np.ones((M,N))
     
+    return(x,y,dx,dy,rho,p,u,v)
+
+def IC_sod_explosion(L, W, N, M):
+    """Circular 2D Sod-like explosion: a high-pressure disk in the centre (use gamma=1.4)."""
+    rho_in,  p_in  = 1.0,   1.0
+    rho_out, p_out = 0.125, 0.1
+    r0 = 0.2*L                               # disk radius
+
+    dx = L/N
+    dy = W/M
+    x  = np.arange(M)*dx
+    y  = np.arange(N)*dy
+
+    X, Y   = np.meshgrid(np.arange(N)*dx, np.arange(M)*dy)
+    inside = np.hypot(X - L/2, Y - W/2) < r0
+    rho = np.where(inside, rho_in, rho_out)
+    p   = np.where(inside, p_in,   p_out)
+    u   = np.zeros((M,N))
+    v   = np.zeros((M,N))
+    return(x,y,dx,dy,rho,p,u,v)
+
+def IC_kh_sharp(L, W, N, M):
+    """KH with a sharp, sinusoidally displaced interface between two streams."""
+    rho_1, u_1 = 1.0,  1.0                   # beyond the interface
+    rho_2, u_2 = 0.1, -1.0                   # before the interface
+    p0   = 1.0
+    A, k = 0.04*L, 1                         # displacement amplitude, number of wavelengths
+
+    dx = L/N
+    dy = W/M
+    x  = np.arange(M)*dx
+    y  = np.arange(N)*dy
+
+    X, Y  = np.meshgrid(np.arange(N)*dx, np.arange(M)*dy)
+    upper = (X - L/2) > A*np.sin(2*np.pi*k*Y/W)
+    rho = np.where(upper, rho_1, rho_2)
+    u   = np.where(upper, u_1,   u_2)
+    v   = np.zeros((M,N))
+    p   = p0*np.ones((M,N))
     return(x,y,dx,dy,rho,p,u,v)
 
 def BCrigid(rho,p,u,v):   # veritcal rigid boundary conditions
@@ -224,18 +203,13 @@ def BCperiodic(rho,p,u,v):   # horizontal periodic boundary conditions
 
 ######################################################
 
-def Godunov2(gamma,L,N,c,t_end):
+def Godunov2(gamma,L,N,c,t_end, IC=IC_kh_springel):
     # global a,rho,p,U,Up1,Up2
     step   = 0
     W      = L
     M      = N
     
-    # x,y,dx,dy,rho,p,u,v = IC(1,0.125,1,0.1,0,0,0,0,1.4,L,W,N,M) # SOD
-    # x,y,dx,dy,rho,p,u,v = IC(1,0.1,1,1,1,-1,0,0,1.4,L,W,N,M) # KH instabillity
-    x,y,dx,dy,rho,p,u,v = IC(L,W,N,M) # KH instabillity Springel 2010
-    # dx,dy,rho,p,u = IC(1,1,1,1,0,0,1.4,L,N)
-    # dx,dy,rho,p,u = IC(1,1,0.4,0.4,-2,2,1.4,L,N) # Test 2
-    # dx,dy,rho,p,u = IC(1,1,1000,0.01,0,0,1.4,L,N) # Test 3
+    x,y,dx,dy,rho,p,u,v = IC(L,W,N,M)
 
     rho,p,u,v       = BCrigid(rho,p,u,v)
     rho,p,u,v       = BCperiodic(rho,p,u,v)

@@ -543,13 +543,14 @@ def plot_conservation(ts, cons):
     ax.set_xlabel('t'); ax.set_ylabel('|Q(t)/Q(0) - 1|'); ax.legend()
     
 
-# def Godunov2(gamma,L,N,c,t_end):
-# x, y, ts, us, vs, ps, rhos = Godunov2(1.4,2,101,0.3,3)
-x, y, ts, us, vs, ps, rhos, cons = Godunov2(5/3,1,50,0.3,2)
-winsound.Beep(880, 200)
-winsound.Beep(440, 500)
-plot_conservation(ts,cons)
-plotgodunov( x, y, ts, us, vs, ps, rhos)
+if __name__ == "__main__":
+    # def Godunov2(gamma,L,N,c,t_end):
+    # x, y, ts, us, vs, ps, rhos = Godunov2(1.4,2,101,0.3,3)
+    x, y, ts, us, vs, ps, rhos, cons = Godunov2(5/3,1,50,0.3,2)
+    winsound.Beep(880, 200)
+    winsound.Beep(440, 500)
+    plot_conservation(ts,cons)
+    plotgodunov( x, y, ts, us, vs, ps, rhos)
 
 # x, y, ts, us, vs, ps, rhos = Godunov2(5/3,1,100,0.02,2)
 # winsound.Beep(880, 200)

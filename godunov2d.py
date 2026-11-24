@@ -3,6 +3,7 @@ import numpy as np
 from numpy import sqrt, sin, cos, pi, exp, log
 import matplotlib.pyplot as plt
 import sys
+import os
 
 def hllc(rho_L,rho_R,p_L,p_R,u_L,u_R,v_L,v_R,gamma):
     # Toro chapter 10.6.1
@@ -442,24 +443,33 @@ def Godunov2(gamma,L,W,M,N,c,t_end, IC=IC_kh_springel):
     
     return( x, y, ts, us, vs, ps, rhos, np.array(cons))
 
-def plotgodunov( x, y, ts, us, vs, ps, rhos):    
-    X, Y = np.meshgrid(x,y)
-    fig, axs = plt.subplots(4, 4, figsize=(12,12))
-    
-    l    = len(ts)//16
-    indx = 0
-    
-    for m in range(4):
-        for n in range(4):
-            if m==3 and n==3:
-                indx = -1
-            else:
-                indx+=l
-            axs[m,n].pcolormesh(X[1:-1,1:-1],Y[1:-1,1:-1],np.transpose(rhos[indx][1:-1,1:-1]),shading='gouraud',cmap='turbo') #'RdYlBu_r')
-            axs[m,n].set_xlabel('t='+str(round(ts[indx],4)))
-    
-    fig3, ax3 = plt.subplots(figsize=(7,7))
-    ax3.pcolormesh(X[1:-1,1:-1],Y[1:-1,1:-1],np.transpose(rhos[-1][1:-1,1:-1]),shading='gouraud',cmap='turbo')
+def plotgodunov( x, y, ts, us, vs, ps, rhos, name=None):
+    """Density snapshots (4x4 grid) and the final state.
+    If name is given, the figures are saved as figures/<name>_evolution.png and figures/<name>_final.png."""
+    X, Y = np.meshgrid(x[1:-1], y[1:-1], indexing='ij')
+    vmin = min(r[1:-1,1:-1].min() for r in rhos)     # common colour scale for all panels
+    vmax = max(r[1:-1,1:-1].max() for r in rhos)
+    kw   = dict(shading='gouraud', cmap='turbo', vmin=vmin, vmax=vmax)
+
+    fig, axs = plt.subplots(4, 4, figsize=(12,12), constrained_layout=True)
+    for n, ax in enumerate(axs.flat):
+        indx = n*(len(ts)-1)//15                       # 16 snapshots from t=0 to t_end
+        pc = ax.pcolormesh(X, Y, rhos[indx][1:-1,1:-1], **kw)
+        ax.set_aspect('equal')
+        ax.set_title('t = %.3f' % ts[indx], fontsize=10)
+        ax.locator_params(nbins=3)                     # fewer tick labels
+    fig.colorbar(pc, ax=axs, shrink=0.6, label='density')
+
+    fig3, ax3 = plt.subplots(figsize=(7,7), constrained_layout=True)
+    pc = ax3.pcolormesh(X, Y, rhos[-1][1:-1,1:-1], **kw)
+    ax3.set_aspect('equal')
+    ax3.set_title('density, t = %.2f' % ts[-1])
+    fig3.colorbar(pc, ax=ax3, shrink=0.8)
+
+    if name is not None:
+        os.makedirs('figures', exist_ok=True)
+        fig.savefig('figures/%s_evolution.png' % name, dpi=70)
+        fig3.savefig('figures/%s_final.png' % name, dpi=90)
     plt.show()
 
 def plot_conservation(ts, cons):
@@ -473,5 +483,8 @@ def plot_conservation(ts, cons):
 if __name__ == "__main__":
     x, y, ts, us, vs, ps, rhos, cons = Godunov2(5/3,1,1,50,50,0.3,2)
     plot_conservation(ts,cons)
-    plotgodunov( x, y, ts, us, vs, ps, rhos)
-
+    os.makedirs('figures', exist_ok=True)
+    plt.savefig('figures/conservation.png', dpi=90, bbox_inches='tight')
+    plotgodunov( x, y, ts, us, vs, ps, rhos, name='kh')
+    
+    

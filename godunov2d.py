@@ -1,18 +1,10 @@
 #################################
-# %matplotlib auto
 import numpy as np
 from numpy import sqrt, sin, cos, pi, exp, log
 import matplotlib.pyplot as plt
 import sys
-from matplotlib import cm
-from matplotlib.ticker import LinearLocator
-from matplotlib.animation import FuncAnimation
 
 def hllc(rho_L,rho_R,p_L,p_R,u_L,u_R,v_L,v_R,gamma):
-    # if rho_L<=0 or rho_R<=0:
-    #     print ('In hllc, bad rho_k=',rho_L,rho_R)
-    # if p_L<=0 or p_R<=0:
-    #     print ('In hllc, bad p_k=',p_L,p_R)
     # Toro chapter 10.6.1
     # step 1
     a_L = sqrt(gamma*p_L/rho_L)
@@ -72,21 +64,18 @@ def hllc(rho_L,rho_R,p_L,p_R,u_L,u_R,v_L,v_R,gamma):
         F2_hllc = F2_L
         F3_hllc = F3_L
         F4_hllc = F4_L
-        # print('deb a')
     
     if (S_L<=0 and 0<=Sstar):
         F1_hllc = F1_L + S_L*( U1star_L - rho_L     )   # U1=rho
         F2_hllc = F2_L + S_L*( U2star_L - rho_L*u_L )  # U2 = rho*u
         F3_hllc = F3_L + S_L*( U3star_L - rho_L*v_L )  # U3 = rho*v
         F4_hllc = F4_L + S_L*( U4star_L - E_L       )  # U4 = E
-        # print('deb b')
         
     if (Sstar<=0 and 0<=S_R):
         F1_hllc = F1_R + S_R*( U1star_R - rho_R     )   # U1=rho
         F2_hllc = F2_R + S_R*( U2star_R - rho_R*u_R )  # U2 = rho*u
         F3_hllc = F3_R + S_R*( U3star_R - rho_R*v_R )  # U2 = rho*u
         F4_hllc = F4_R + S_R*( U4star_R - E_R       )  # U3 = E
-        # print('deb c')
         
     if 0>=S_R:
         F1_hllc = F1_R
@@ -96,7 +85,7 @@ def hllc(rho_L,rho_R,p_L,p_R,u_L,u_R,v_L,v_R,gamma):
         # print('deb d')
         
     Fhllc = np.array([F1_hllc,F2_hllc,F3_hllc,F4_hllc])
-    return Fhllc   #pstar, Sstar #
+    return Fhllc
 
 ###############################################################
 
@@ -166,7 +155,7 @@ def IC_kh_sharp(L, W, N, M):
     p   = p0*np.ones((M,N))
     return(x,y,dx,dy,rho,p,u,v)
 
-def BCrigid(rho,p,u,v):   # veritcal rigid boundary conditions
+def BCrigid(rho,p,u,v):   # vertical rigid boundary conditions
     rho[ :,0]  = rho[:, 1]
     rho[:,-1]  = rho[:,-2]
     p[:, 0]    =  p[:, 1]
@@ -204,7 +193,6 @@ def BCperiodic(rho,p,u,v):   # horizontal periodic boundary conditions
 ######################################################
 
 def Godunov2(gamma,L,N,c,t_end, IC=IC_kh_springel):
-    # global a,rho,p,U,Up1,Up2
     step   = 0
     W      = L
     M      = N
@@ -219,12 +207,7 @@ def Godunov2(gamma,L,N,c,t_end, IC=IC_kh_springel):
     U[:,:,1] = rho*u*dx*dy
     U[:,:,2] = rho*v*dx*dy
     U[:,:,3] = rho*(0.5*(u**2+v**2) + p/(gamma-1)/rho)*dx*dy
-    
-    # for x5 in range(N):
-    #     for y5 in range(M):
-    #         if rho[x5,y5]==0 or np.isnan(rho[x5,y5])  or np.isinf(rho[x5,y5]):
-    #             print('bad rho!!!\n',rho[x5,y5])
-    
+
     # time
     now   = 0
 
@@ -243,7 +226,7 @@ def Godunov2(gamma,L,N,c,t_end, IC=IC_kh_springel):
     
     cons = [U[1:-1,1:-1][:,:,[0,3]].sum(axis=(0,1))]  #conservation test
     
-    # stupid stuff initializing
+    # allocate slope arrays
     drho_L = np.zeros((M,N))
     drho_R = np.zeros((M,N))
     drho_U = np.zeros((M,N))
@@ -265,17 +248,11 @@ def Godunov2(gamma,L,N,c,t_end, IC=IC_kh_springel):
     Up2    = np.ones((M,N,4))
 
     while (now<t_end):
-        # # step 2 - BC
-        # rho,p,u,v      = BCrigid(rho,p,u,v)
-        # rho,p,u,v      = BCperiodic(rho,p,u,v)
-        
         # step 1 - dt
         if (1==0): #(rho<0).any() or (rho==0).any():
             print("bad rho in step # ",step)
-            print(rho)
         if (p<0).any():
             print("bad p in step # ",step)
-            print(p)
         a        = sqrt(gamma*p/rho)
         if(np.isnan(a).any()):
             print('Nan args in a:', np.argwhere(np.isnan(a)))
@@ -463,7 +440,7 @@ def Godunov2(gamma,L,N,c,t_end, IC=IC_kh_springel):
         rho,p,u,v      = BCperiodic(rho,p,u,v)
         
         
-        if step/3 == step//3:
+        if step%3 == 0:
             # update memory - only every 3 steps!
             us.append(u.copy())
             ps.append(p.copy())
@@ -471,9 +448,8 @@ def Godunov2(gamma,L,N,c,t_end, IC=IC_kh_springel):
             ts.append(now)
             
             cons.append(U[1:-1,1:-1][:,:,[0,3]].sum(axis=(0,1)))
-             
-            
-    print(len(ts))
+
+
     rho,p,u,v  = BCrigid(rho,p,u,v)
     
     return( x, y, ts, us, vs, ps, rhos, np.array(cons))
@@ -493,17 +469,10 @@ def plotgodunov( x, y, ts, us, vs, ps, rhos):
                 indx+=l
             axs[m,n].pcolormesh(X[1:-1,1:-1],Y[1:-1,1:-1],np.transpose(rhos[indx][1:-1,1:-1]),shading='gouraud',cmap='turbo') #'RdYlBu_r')
             axs[m,n].set_xlabel('t='+str(round(ts[indx],4)))
-            # plt.suptitle('density plots')
-    
-    # fig2, ax2 = plt.subplots(figsize=(7,7))
-
-    # ax2.plot(x[1:-1],rhos[-1][1:-1,51])
-    # plt.show()
     
     fig3, ax3 = plt.subplots(figsize=(7,7))
     ax3.pcolormesh(X[1:-1,1:-1],Y[1:-1,1:-1],np.transpose(rhos[-1][1:-1,1:-1]),shading='gouraud',cmap='turbo')
     plt.show()
-# plotgodunov( x, y, ts, us, vs, ps, rhos)
 
 def plot_conservation(ts, cons):
     rel = np.abs(cons/cons[0] - 1)
@@ -514,13 +483,7 @@ def plot_conservation(ts, cons):
     
 
 if __name__ == "__main__":
-    # def Godunov2(gamma,L,N,c,t_end):
-    # x, y, ts, us, vs, ps, rhos = Godunov2(1.4,2,101,0.3,3)
     x, y, ts, us, vs, ps, rhos, cons = Godunov2(5/3,1,50,0.3,2)
     plot_conservation(ts,cons)
     plotgodunov( x, y, ts, us, vs, ps, rhos)
-
-# x, y, ts, us, vs, ps, rhos = Godunov2(5/3,1,100,0.02,2)
-# plotgodunov( x, y, ts, us, vs, ps, rhos)
-
 

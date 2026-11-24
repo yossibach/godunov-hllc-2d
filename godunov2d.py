@@ -89,70 +89,59 @@ def hllc(rho_L,rho_R,p_L,p_R,u_L,u_R,v_L,v_R,gamma):
 
 ###############################################################
 
-def IC_kh_springel(L,W,N,M):  # KH Springel 2010
-    rho_i,u_i  = 2, 0.5 # 10, 0.5 # 
-    rho_o,u_o  = 1,-0.5
-    p          = 2.5
-    w0,twosig2 = 0.1, 0.05**2
-    
-    dx    = L/N
-    dy    = W/M
-    x     = np.arange(M)*dx
-    y     = np.arange(N)*dy
-    
-    rho   = np.ones((M,N))
-    p     = np.ones((M,N))
-    u     = np.ones((M,N))
-    v     = np.ones((M,N))
+def make_grid(L, W, M, N):
+    """Cell-centred grid with one ghost layer on each side.
+    Array axis 0 = x (periodic, velocity u); axis 1 = y (rigid walls, velocity v).
+    Interior cells are 1..M and 1..N; the domain is exactly [0,L] x [0,W]."""
+    dx = L/M
+    dy = W/N
+    x  = (np.arange(M+2) - 0.5)*dx           # cell centres, incl. ghost cells
+    y  = (np.arange(N+2) - 0.5)*dy
+    X, Y = np.meshgrid(x, y, indexing='ij')  # X[i,j] = x[i], Y[i,j] = y[j]
+    return(x,y,dx,dy,X,Y)
 
-    X = np.arange(0, L, dx)
-    Y = np.arange(0, W, dy)
-    X, Y = np.meshgrid(X, Y)
-    inner = abs(X-0.5) < 0.25            # the dense central band
+def IC_kh_springel(L, W, M, N):
+    """KH instability, Springel (2010): dense central band in y, streams along x."""
+    rho_i, u_i = 2,  0.5
+    rho_o, u_o = 1, -0.5
+    p0         = 2.5
+    w0, twosig2 = 0.1, 0.05**2
+
+    x,y,dx,dy,X,Y = make_grid(L, W, M, N)
+    inner = abs(Y - 0.5*W) < 0.25*W            # the dense central band
     rho   = np.where(inner, rho_i, rho_o)
     u     = np.where(inner, u_i,   u_o)
-    v   = w0*sin(4*pi*Y)*( exp(-(X-0.25)**2/twosig2) + exp(-(X-0.75)**2/twosig2) )
-    p   = 2.5*np.ones((M,N))
-    
+    v     = w0*sin(4*pi*X/L)*( exp(-(Y-0.25*W)**2/twosig2) + exp(-(Y-0.75*W)**2/twosig2) )
+    p     = p0*np.ones_like(X)
     return(x,y,dx,dy,rho,p,u,v)
 
-def IC_sod_explosion(L, W, N, M):
+def IC_sod_explosion(L, W, M, N):
     """Circular 2D Sod-like explosion: a high-pressure disk in the centre (use gamma=1.4)."""
     rho_in,  p_in  = 1.0,   1.0
     rho_out, p_out = 0.125, 0.1
-    r0 = 0.2*L                               # disk radius
+    r0 = 0.2*min(L, W)                         # disk radius
 
-    dx = L/N
-    dy = W/M
-    x  = np.arange(M)*dx
-    y  = np.arange(N)*dy
-
-    X, Y   = np.meshgrid(np.arange(N)*dx, np.arange(M)*dy)
+    x,y,dx,dy,X,Y = make_grid(L, W, M, N)
     inside = np.hypot(X - L/2, Y - W/2) < r0
     rho = np.where(inside, rho_in, rho_out)
     p   = np.where(inside, p_in,   p_out)
-    u   = np.zeros((M,N))
-    v   = np.zeros((M,N))
+    u   = np.zeros_like(X)
+    v   = np.zeros_like(X)
     return(x,y,dx,dy,rho,p,u,v)
 
-def IC_kh_sharp(L, W, N, M):
+def IC_kh_sharp(L, W, M, N):
     """KH with a sharp, sinusoidally displaced interface between two streams."""
-    rho_1, u_1 = 1.0,  1.0                   # beyond the interface
-    rho_2, u_2 = 0.1, -1.0                   # before the interface
+    rho_1, u_1 = 1.0,  1.0                   # above the interface
+    rho_2, u_2 = 0.1, -1.0                   # below the interface
     p0   = 1.0
-    A, k = 0.04*L, 1                         # displacement amplitude, number of wavelengths
+    A, k = 0.04*W, 1                         # displacement amplitude, number of wavelengths
 
-    dx = L/N
-    dy = W/M
-    x  = np.arange(M)*dx
-    y  = np.arange(N)*dy
-
-    X, Y  = np.meshgrid(np.arange(N)*dx, np.arange(M)*dy)
-    upper = (X - L/2) > A*np.sin(2*np.pi*k*Y/W)
+    x,y,dx,dy,X,Y = make_grid(L, W, M, N)
+    upper = (Y - W/2) > A*np.sin(2*np.pi*k*X/L)
     rho = np.where(upper, rho_1, rho_2)
     u   = np.where(upper, u_1,   u_2)
-    v   = np.zeros((M,N))
-    p   = p0*np.ones((M,N))
+    v   = np.zeros_like(X)
+    p   = p0*np.ones_like(X)
     return(x,y,dx,dy,rho,p,u,v)
 
 def BCrigid(rho,p,u,v):   # vertical rigid boundary conditions
@@ -192,12 +181,11 @@ def BCperiodic(rho,p,u,v):   # horizontal periodic boundary conditions
 
 ######################################################
 
-def Godunov2(gamma,L,N,c,t_end, IC=IC_kh_springel):
+def Godunov2(gamma,L,W,M,N,c,t_end, IC=IC_kh_springel):
     step   = 0
-    W      = L
-    M      = N
     
-    x,y,dx,dy,rho,p,u,v = IC(L,W,N,M)
+    x,y,dx,dy,rho,p,u,v = IC(L,W,M,N)
+    M, N = rho.shape          # from here on: array sizes incl. ghosts (M+2, N+2)
 
     rho,p,u,v       = BCrigid(rho,p,u,v)
     rho,p,u,v       = BCperiodic(rho,p,u,v)
@@ -483,7 +471,7 @@ def plot_conservation(ts, cons):
     
 
 if __name__ == "__main__":
-    x, y, ts, us, vs, ps, rhos, cons = Godunov2(5/3,1,50,0.3,2)
+    x, y, ts, us, vs, ps, rhos, cons = Godunov2(5/3,1,1,50,50,0.3,2)
     plot_conservation(ts,cons)
     plotgodunov( x, y, ts, us, vs, ps, rhos)
 

@@ -7,7 +7,6 @@ import sys
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator
 from matplotlib.animation import FuncAnimation
-import winsound
 
 def hllc(rho_L,rho_R,p_L,p_R,u_L,u_R,v_L,v_R,gamma):
     # if rho_L<=0 or rho_R<=0:
@@ -300,11 +299,9 @@ def Godunov2(gamma,L,N,c,t_end):
         if (1==0): #(rho<0).any() or (rho==0).any():
             print("bad rho in step # ",step)
             print(rho)
-            winsound.Beep(440, 500)
         if (p<0).any():
             print("bad p in step # ",step)
             print(p)
-            # winsound.Beep(440, 500)
         a        = sqrt(gamma*p/rho)
         if(np.isnan(a).any()):
             print('Nan args in a:', np.argwhere(np.isnan(a)))
@@ -312,7 +309,7 @@ def Godunov2(gamma,L,N,c,t_end):
         dt       = min(c*(min(dx,dy)/(a+sqrt(u**2+v**2))).min(), t_end-now)
         now     += dt
         step    += 1
-        if step/1 == step//1:
+        if step%10 == 0:
             print('step ',step, ', time = ',now)
         
         # step 3 - calculate slopes using MinMod
@@ -546,14 +543,10 @@ if __name__ == "__main__":
     # def Godunov2(gamma,L,N,c,t_end):
     # x, y, ts, us, vs, ps, rhos = Godunov2(1.4,2,101,0.3,3)
     x, y, ts, us, vs, ps, rhos, cons = Godunov2(5/3,1,50,0.3,2)
-    winsound.Beep(880, 200)
-    winsound.Beep(440, 500)
     plot_conservation(ts,cons)
     plotgodunov( x, y, ts, us, vs, ps, rhos)
 
 # x, y, ts, us, vs, ps, rhos = Godunov2(5/3,1,100,0.02,2)
-# winsound.Beep(880, 200)
-# winsound.Beep(440, 500)
 # plotgodunov( x, y, ts, us, vs, ps, rhos)
 
 
